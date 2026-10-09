@@ -167,6 +167,23 @@ in
   );
 
   # --- Rspamd -----------------------------------------------------------------
+  # The controller socket accepts unauthenticated commands (retrain Bayes,
+  # change maps). The mail module makes it world-writable (0666); restrict it
+  # to root (the admin `rspamc` wrapper) and the mail user, whose Dovecot
+  # processes call rspamc to learn spam/ham when mail is moved to/from Junk.
+  services.rspamd.workers.controller.bindSockets = lib.mkForce [
+    {
+      socket = "/run/rspamd/worker-controller.sock";
+      mode = "0660";
+      owner = config.services.rspamd.user;
+      group = config.mailserver.storage.group;
+    }
+  ];
+  # Rspamd runs unprivileged and may only hand the socket to a group it is
+  # in. The group grants nothing else: mail homes are 0700 and mail files are
+  # written with umask 0077.
+  systemd.services.rspamd.serviceConfig.SupplementaryGroups = [ config.mailserver.storage.group ];
+
   services.rspamd.locals = {
     # Enforce the sender's published DMARC policy instead of only scoring it.
     # This is what stops spoofed mail claiming to be from paypal.com & co.
