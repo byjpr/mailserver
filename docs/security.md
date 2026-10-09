@@ -22,7 +22,7 @@ come from simple-nixos-mailserver (SNM); the rest is added in `modules/`.
 | DMARC `p=reject; sp=reject; adkim=s; aspf=s`: receivers reject unauthenticated mail claiming to be from you, including from subdomains | `lib/default.nix` |
 | SPF record for the HELO name, so bounces can be authenticated too | `lib/default.nix` |
 | **Port 25 refuses any envelope sender in your own domains.** Your users send through port 465 with a password, so such mail is always forged | `mail.nix` (`local_sender_domains`) |
-| **Authenticated users can only send as their own address or aliases** (`reject_sender_login_mismatch`), so one user can't impersonate another | SNM |
+| **Authenticated users can only send as their own address or aliases**, both in the envelope (`reject_sender_login_mismatch`) and in the `From:` header recipients see (an Rspamd prefilter rejects anything else), so one user can't impersonate another | SNM, `modules/rspamd/from-owner.lua` |
 | Aggregate DMARC reports are received at `dmarc-reports@`, so you see who tries to send as you | `settings.nix` |
 
 ## 2. Spoofed and unwanted inbound mail

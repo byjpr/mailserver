@@ -1,0 +1,7 @@
+Oct 09 19:05:18 mail dovecot[812]: imap-login: Login aborted: Logged out (auth failed, 1 attempts in 4 secs) (auth_failed): user=<user1@example.com>, method=PLAIN, rip=192.0.2.10, lip=192.0.2.1, TLS, session=<3OE3B21dupV/AAAB>
+Oct 09 19:05:25 mail dovecot[812]: imap-login: Login aborted: Logged out (auth failed, 3 attempts in 6 secs) (auth_failed): user=<user1@example.com>, method=PLAIN, rip=2001:db8::10, lip=2001:db8::1, TLS, session=<QpCDB21dcLh/AAAB>
+Oct 09 19:05:30 mail dovecot[812]: imap-login: Login aborted: Connection closed: write() failed: Connection reset by peer (auth failed, 1 attempts in 6 secs) (auth_failed): user=<unknown@example.com>, method=PLAIN, rip=198.51.100.7, lip=192.0.2.1, TLS, session=<1f7PB21dfrh/AAAB>
+Oct 09 19:05:31 mail dovecot[812]: imap-login: Info: Login aborted: Logged out (auth failed, 2 attempts in 9 secs) (auth_failed): user=<x@example.com>, method=LOGIN, rip=203.0.113.5, lip=192.0.2.1, TLS, session=<aaaaaaaaaaaaaaaa>
+Oct 09 19:04:52 mail dovecot[812]: imap-login: Login aborted: Logged out (auth service reported temporary failure, 1 attempts in 3 secs) (temp_fail): user=<user1@example.com>, method=PLAIN, rip=192.0.2.99, lip=192.0.2.1, TLS, session=<a3erBW1dKr5/AAAB>
+Oct 09 19:06:01 mail dovecot[812]: imap-login: Login: user=<user1@example.com>, method=PLAIN, rip=192.0.2.99, lip=192.0.2.1, mpid=901, TLS, session=<bbbbbbbbbbbbbbbb>
+Oct 09 19:06:02 mail dovecot[812]: imap-login: Login aborted: Logged out (no auth attempts in 0 secs) (no_auth_attempts): rip=192.0.2.98, lip=192.0.2.1, TLS, session=<cccccccccccccccc>

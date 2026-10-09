@@ -125,6 +125,7 @@ dkim/                 public DKIM keys (generated, committed)
 secrets/              sops-encrypted secrets + the server's public host key
 infra/servers/<p>/    Terraform: server + reverse DNS, one directory per provider
 infra/dns/cloudflare/ Terraform: all DNS records
+infra/*/terraform.tfstate  Terraform state, committed, encrypted (passphrase in secrets/)
 scripts/              what the `just` commands run
 tests/                fixtures for the CI build of an example configuration
 machine.json          disk and network facts recorded by `just install`
@@ -138,6 +139,12 @@ OVHcloud and netcup sell snapshots/backups as options in their panels;
 Serverspace has snapshots in its panel. Mail lives in `/var/vmail`; for
 off-site backups, add e.g. `services.restic.backups` pointing at an S3 bucket
 (Backblaze B2, OVHcloud Object Storage, ...).
+
+Terraform state is committed to git, encrypted with OpenTofu's state
+encryption (the passphrase is in `secrets/secrets.yaml`), so `just apply`
+works from any machine that can decrypt the secrets. Always commit it after
+`just apply`. If the server is installed but its state is missing,
+`just apply` refuses to run rather than create a second server.
 
 To rebuild from scratch, create a new server (`just apply`, after removing
 the old one from the Terraform state), delete `machine.json`, and run

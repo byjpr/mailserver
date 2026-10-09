@@ -25,6 +25,10 @@ jobs:
             | xargs nix build -L --no-link
       - name: Formatting
         run: nix fmt -- --ci
+      - name: NixOS release support
+        run: |
+          nix develop -c scripts/check-release.sh \
+            || echo "::warning::$(nix develop -c scripts/check-release.sh 2>&1 | tail -n1)"
 
   terraform:
     runs-on: ubuntu-latest

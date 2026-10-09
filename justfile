@@ -52,6 +52,11 @@ deploy action="switch":
 # Update nixpkgs and the other inputs (then: just deploy)
 update:
     nix flake update
+    scripts/check-release.sh
+
+# Move to the next NixOS release, e.g. `just upgrade-release 26.11 2027-06-30`
+upgrade-release release end_of_life:
+    scripts/upgrade-release.sh {{release}} {{end_of_life}}
 
 # Print the DNS records (for dns = "manual")
 dns:
