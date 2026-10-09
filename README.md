@@ -146,9 +146,11 @@ when Terraform manages them.
 
 ## Limitations and notes
 
-- **No virus scanning.** ClamAV needs 1–1.5 GB of RAM on its own. With 4 GB
-  (e.g. OVHcloud VPS-1) you can set `mailserver.virusScanning = true` in
-  `modules/mail.nix`.
+- **No virus scanning by default.** ClamAV needs 1–1.5 GB of RAM on its own;
+  with 4 GB (e.g. OVHcloud VPS-1) set `virusScanning = true` in
+  `settings.nix`. Independently of that, attachments that are almost always
+  malware (executables, scripts, disk images; `blockedAttachmentExtensions`)
+  are rejected, also inside archives.
 - **No DANE for inbound mail.** MTA-STS covers the same downgrade attack.
   With DNSSEC enabled for your zone (Cloudflare supports it), publishing a
   TLSA record for the mail host would be a good addition.
