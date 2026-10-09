@@ -65,6 +65,10 @@ check:
 ssh *command:
     source scripts/lib.sh && ssh $(ssh_opts) "root@$(fqdn)" {{command}}
 
+# Run the health check now and show its result
+health:
+    just ssh "'systemctl start mail-health-check; journalctl -u mail-health-check -n 20 --no-pager -o cat'"
+
 # Show the mail queue and recent mail log on the server
 logs:
     just ssh "'postqueue -p; journalctl -u postfix -u dovecot -u rspamd -n 100 --no-pager'"

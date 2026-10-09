@@ -41,6 +41,11 @@ import ../settings.nix
     username = "ci";
     spfInclude = "spf.relay.test";
   };
+  monitoring = {
+    healthcheckUrl = "https://hc-ping.example.test/ci";
+    diskWarnPercent = 85;
+    queueWarn = 100;
+  };
   autoUpgrade = {
     enable = true;
     flake = "github:example/mailserver";

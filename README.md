@@ -101,6 +101,7 @@ can't change secrets or reinstall the server from this repository.
 | Rotate a DKIM key | `just add-domain <domain>` (new date-based selector), then `just apply && just deploy`. A few days later, delete the old `dkim/<domain>/<selector>.txt` and its entry in `just secrets`, then apply and deploy again |
 | Send through a relay | Fill in `relay` in `settings.nix` and set `enable = true`, run `just relay-password`, then `just apply && just deploy` |
 | Security updates | `just update && just deploy`. A weekly GitHub Action also opens a PR that updates `flake.lock`; or turn on `autoUpgrade` |
+| Monitoring | Set `monitoring.healthcheckUrl` (healthchecks.io or similar): an hourly self-check of services, certificate, disk, queue, outbound SMTP and blocklists alerts you on failure **and** when the server stops reporting. `just health` runs it now |
 | Logs and queue | `just logs`, or `just ssh` |
 | Rspamd web UI | `ssh -L 11334:/run/rspamd/worker-controller.sock root@mail.example.com`, then open http://localhost:11334 |
 

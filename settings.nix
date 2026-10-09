@@ -126,6 +126,18 @@
     flake = "github:your-user/mailserver";
   };
 
+  # Hourly self-check: services, TLS certificate, disk, mail queue, outbound
+  # SMTP and blocklists. Create a check at https://healthchecks.io (free) or
+  # your own Healthchecks / Uptime Kuma "push" monitor with a 1 hour period,
+  # and paste its ping URL here: you are then alerted when a check fails AND
+  # when the server stops reporting (e.g. because it is down). Without a URL,
+  # problems are mailed to adminEmail, which can't work if mail is broken.
+  monitoring = {
+    healthcheckUrl = ""; # e.g. "https://hc-ping.com/<uuid>"
+    diskWarnPercent = 85;
+    queueWarn = 100;
+  };
+
   timeZone = "UTC";
 
   # Where the server runs. Each provider has a Terraform step in
