@@ -114,6 +114,16 @@
     burst = 50;
   };
 
+  # Greylisting: the first delivery attempt of mail that already looks
+  # suspicious (spam score >= minScore, Rspamd's default is 4) is deferred;
+  # real mail servers retry within minutes, most spam bots never do. Clean
+  # mail is not delayed. Disable it if delayed codes/sign-up mails from
+  # sloppy senders bother you more than the extra spam.
+  greylisting = {
+    enable = true;
+    minScore = 4;
+  };
+
   # Messages larger than this are rejected (bytes). 25 MiB.
   messageSizeLimit = 26214400;
 
