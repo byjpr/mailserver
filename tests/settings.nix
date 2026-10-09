@@ -41,6 +41,17 @@ import ../settings.nix
     username = "ci";
     spfInclude = "spf.relay.test";
   };
+  backup = {
+    enable = true;
+    repository = "s3:https://s3.example.test/bucket/mail";
+    schedule = "daily";
+    keep = {
+      daily = 7;
+      weekly = 5;
+      monthly = 12;
+    };
+    appendOnly = false;
+  };
   autoUpgrade = {
     enable = true;
     flake = "github:example/mailserver";

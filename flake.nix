@@ -67,6 +67,7 @@
               ./modules/mail.nix
               ./modules/relay.nix
               ./modules/web.nix
+              ./modules/backup.nix
               {
                 networking.hostName = settings.hostname;
                 networking.domain = settings.primaryDomain;
@@ -153,6 +154,7 @@
             nixos-rebuild-ng
             nixfmt
             curl
+            restic
             # OVHcloud: reinstalls a newly ordered VPS with your SSH key
             (python3.withPackages (ps: [ ps.ovh ]))
           ];
