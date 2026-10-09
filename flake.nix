@@ -19,6 +19,14 @@
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Only its NixOS module, to build nixos-anywhere's installer image from
+    # our own pinned nixpkgs instead of downloading a moving GitHub release.
+    nixos-images = {
+      url = "github:nix-community/nixos-images";
+      inputs.nixos-stable.follows = "nixpkgs";
+      inputs.nixos-unstable.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -28,6 +36,7 @@
       simple-nixos-mailserver,
       disko,
       sops-nix,
+      nixos-images,
     }:
     let
       inherit (nixpkgs) lib;
@@ -160,6 +169,18 @@
       });
 
       formatter = forDevSystems (pkgs: pkgs.nixfmt-tree);
+
+      # The kexec installer `just install` boots on the stock image, built
+      # from the same pinned nixpkgs as the server (see scripts/install.sh).
+      packages.x86_64-linux.kexec-installer =
+        (lib.nixosSystem {
+          system = "x86_64-linux";
+          modules = [
+            nixos-images.nixosModules.kexec-installer
+            nixos-images.nixosModules.noninteractive
+            { system.kexec-installer.name = "nixos-kexec-installer-noninteractive"; }
+          ];
+        }).config.system.build.kexecInstallerTarball;
 
       # Build the complete system closure: catches option typos, failed
       # assertions and broken packages before anything reaches the server.

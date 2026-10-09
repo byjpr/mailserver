@@ -77,6 +77,7 @@ misdirected message.
 | The Rspamd web UI is only on a local Unix socket | SNM |
 | Services run under systemd sandboxing where SNM/nixpkgs provide it | SNM, nixpkgs |
 | Weekly `flake.lock` update PR (GitHub Action), optional nightly auto-upgrade with reboot window | `.github/workflows/update.yml`, `hardening.nix` |
+| The installer image `just install` boots is built from the same pinned nixpkgs as the server (`flake.lock`), not downloaded from the latest GitHub release | `flake.nix` (`kexec-installer`), `scripts/install.sh` |
 | The server can't be destroyed by Terraform accidentally (`prevent_destroy`) | `infra/servers/*/main.tf` |
 | The provider's SMTP-blocking network firewall is turned off on netcup (its default "Mail block" policy), with the host firewall doing the filtering | `infra/servers/netcup/main.tf` |
 
