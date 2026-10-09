@@ -65,6 +65,10 @@ check:
 ssh *command:
     source scripts/lib.sh && ssh $(ssh_opts) "root@$(fqdn)" {{command}}
 
+# Quick health overview of the installed server
+status:
+    scripts/status.sh
+
 # Show the mail queue and recent mail log on the server
 logs:
     just ssh "'postqueue -p; journalctl -u postfix -u dovecot -u rspamd -n 100 --no-pager'"

@@ -13,10 +13,14 @@ in
 lib.mkIf cfg.enable {
   sops.secrets."relay/password" = { };
 
-  # Postfix reads this map before dropping privileges, so root-only is fine.
+  # Postfix's smtp client opens this map at startup, normally before it
+  # drops privileges. Group-readable by postfix (never world-readable) so it
+  # also works if the table is (re)opened as the postfix user.
   sops.templates."postfix-relay-credentials" = {
     content = "${nexthop} ${cfg.username}:${config.sops.placeholder."relay/password"}\n";
-    mode = "0400";
+    owner = "root";
+    group = config.services.postfix.group;
+    mode = "0440";
     restartUnits = [ "postfix.service" ];
   };
 
