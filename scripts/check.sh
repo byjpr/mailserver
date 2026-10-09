@@ -42,11 +42,21 @@ fi
 
 for domain in $(setting domains | jq -r '.[]'); do
   echo "Domain $domain"
-  [[ "$(q MX "$domain")" == "10 $name." ]] && ok "MX -> $name" || bad "MX: '$(q MX "$domain")'"
+  mx="$(q MX "$domain")"
+  [[ "$mx" == "10 $name." ]] && ok "MX -> $name" \
+    || bad "MX should be exactly '10 $name.', found: $(tr '\n' ' ' <<< "$mx")(old MX records split incoming mail)"
   spf="$(q TXT "$domain" | grep '^v=spf1' || true)"
-  [[ "$spf" == *"-all" ]] && ok "SPF $spf" || bad "SPF: '$spf'"
-  dmarc="$(q TXT "_dmarc.$domain")"
-  [[ "$dmarc" == v=DMARC1* ]] && ok "DMARC $dmarc" || bad "DMARC: '$dmarc'"
+  if (( $(grep -c . <<< "$spf") > 1 )); then
+    bad "$(grep -c . <<< "$spf") SPF records (SPF then fails with permerror); keep only ours"
+  else
+    [[ "$spf" == *"-all" ]] && ok "SPF $spf" || bad "SPF: '$spf'"
+  fi
+  dmarc="$(q TXT "_dmarc.$domain" | grep '^v=DMARC1' || true)"
+  if (( $(grep -c . <<< "$dmarc") > 1 )); then
+    bad "more than one DMARC record (receivers then ignore DMARC)"
+  else
+    [[ "$dmarc" == v=DMARC1* ]] && ok "DMARC $dmarc" || bad "DMARC: '$dmarc'"
+  fi
   for f in dkim/"$domain"/*.txt; do
     [[ -f "$f" ]] || { bad "no DKIM key in dkim/$domain"; continue; }
     selector="$(basename "$f" .txt)"

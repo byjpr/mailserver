@@ -5,6 +5,7 @@
 *.auto.tfvars.json
 terraform.tfvars
 crash.log
+.preflight-*.json
 
 # Nix
 result

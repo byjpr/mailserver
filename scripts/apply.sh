@@ -37,6 +37,19 @@ case "$(jq -r .dns <<< "$vars")" in
     jq -n --arg v4 "$ipv4" --arg v6 "$ipv6" '{server: {ipv4: $v4, ipv6: $v6}}' \
       > "$dns/server.auto.tfvars.json"
     tofu -chdir="$dns" init -input=false > /dev/null
+    if [[ "${DNS_PREFLIGHT:-}" != skip ]]; then
+      # Records we want (host A/AAAA + generated), and the IDs of those
+      # already managed by Terraform, which are therefore not conflicts.
+      jq --arg host "$(jq -r .hostname <<< "$vars")" --arg zone "$(jq -r .primaryDomain <<< "$vars")" \
+         --arg v4 "$ipv4" --arg v6 "$ipv6" \
+         '.dnsRecords + [{domain: $zone, type: "A", name: $host, value: $v4}]
+                      + (if $v6 == "" then [] else [{domain: $zone, type: "AAAA", name: $host, value: $v6}] end)' \
+         <<< "$vars" > "$dns/.preflight-desired.json"
+      tofu -chdir="$dns" show -json \
+        | jq '[.values.root_module.resources[]? | select(.type == "cloudflare_dns_record") | .values.id]' \
+        > "$dns/.preflight-managed.json"
+      python3 "$ROOT/scripts/dns-preflight.py" "$dns/.preflight-desired.json" "$dns/.preflight-managed.json"
+    fi
     tofu -chdir="$dns" apply
     ;;
   manual)
