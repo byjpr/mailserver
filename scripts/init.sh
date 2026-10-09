@@ -64,6 +64,9 @@ done
 
 cat <<EOF
 
+Keep this repository PRIVATE: settings.nix lists every mailbox, and the
+encrypted secrets stay in git history forever (see docs/security.md).
+
 Done. Next steps:
   1. Set a password for each mailbox:   just passwd <address>
   2. Commit .sops.yaml, secrets/ and dkim/ (everything there is encrypted or public).
