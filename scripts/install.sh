@@ -27,13 +27,54 @@ read -rp "Type the host name to continue: " confirm
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
+# Verify the stock image's SSH host key before sending it anything: the
+# install uploads the server's private host key, which also decrypts every
+# secret. Without verification, whoever intercepts this connection gets it.
+pin="$tmp/known_hosts"
+ssh-keyscan -t ed25519 -T 15 "$ip" 2> /dev/null > "$pin" || true
+[[ -s "$pin" ]] || die "could not read an ed25519 host key from $ip (is the server up?)"
+fingerprint="$(ssh-keygen -lf "$pin" | awk '{print $2}')"
+cat <<EOF2
+
+The server at $ip presents this SSH host key:
+
+    $fingerprint (ED25519)
+
+Compare it with the one the server itself reports, in the provider's web
+console: cloud-init prints "SSH HOST KEY FINGERPRINTS" in the boot log, or log
+in there and run: ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub
+EOF2
+if [[ -n "${INSTALL_HOST_FINGERPRINT:-}" ]]; then
+  [[ "$INSTALL_HOST_FINGERPRINT" == "$fingerprint" ]] \
+    || die "fingerprint mismatch: expected $INSTALL_HOST_FINGERPRINT"
+else
+  read -rp "Paste the fingerprint from the console (or type 'trust' to skip): " answer
+  if [[ "$answer" == trust ]]; then
+    echo "warning: continuing without verifying the host key" >&2
+  elif [[ "$answer" != "$fingerprint" ]]; then
+    die "fingerprint mismatch; not installing"
+  fi
+fi
+
+# nixos-anywhere passes "-o StrictHostKeyChecking=no" itself, and OpenSSH
+# uses the first value given for an option, so put the pinned settings in
+# front of every ssh call it makes. The kexec installer keeps the stock
+# image's host keys, so the pin also holds after kexec.
+real_ssh="$(command -v ssh)"
+mkdir -p "$tmp/bin"
+cat > "$tmp/bin/ssh" <<EOF2
+#!/usr/bin/env bash
+exec "$real_ssh" -o UserKnownHostsFile="$pin" -o StrictHostKeyChecking=yes "\$@"
+EOF2
+chmod +x "$tmp/bin/ssh"
+
 # Network facts the provider's API knows better than the stock image
 # (netcup: the IPv6 /64 is not configured in its images).
 tf_network=""
 if tofu_server output -json network > "$tmp/network.json" 2> /dev/null; then
   tf_network="$tmp/network.json"
 fi
-"$ROOT/scripts/detect-machine.sh" "$user@$ip" "$tf_network"
+"$ROOT/scripts/detect-machine.sh" "$user@$ip" "$pin" "$tf_network"
 
 install -d -m 755 "$tmp/root/etc/ssh"
 (umask 077 && sops decrypt --input-type binary --output-type binary "$HOST_KEY_ENC" > "$tmp/root/etc/ssh/ssh_host_ed25519_key")
@@ -44,7 +85,7 @@ if [[ "$(uname -s)-$(uname -m)" != "Linux-x86_64" ]]; then
   build_args=(--build-on remote)
 fi
 
-nixos-anywhere \
+PATH="$tmp/bin:$PATH" nixos-anywhere \
   --flake "$ROOT#mail" \
   --extra-files "$tmp/root" \
   ${build_args[@]+"${build_args[@]}"} \
