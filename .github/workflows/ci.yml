@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  nix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+      # Builds the complete server configuration ("system", once `just init`
+      # has run) and the example configuration. Fails on option errors,
+      # broken assertions (e.g. a domain without DKIM key or postmaster@
+      # address) and secrets referenced but missing from secrets.yaml.
+      - name: Build
+        run: |
+          nix eval --json .#checks.x86_64-linux --apply builtins.attrNames \
+            | jq -r '.[] | ".#checks.x86_64-linux." + .' \
+            | xargs nix build -L --no-link
+      - name: Formatting
+        run: nix fmt -- --ci
+
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+      - name: Validate
+        run: |
+          nix eval --json .#tfvars | jq '{mail: .}' > terraform/settings.auto.tfvars.json
+          nix develop -c tofu -chdir=terraform fmt -check
+          nix develop -c tofu -chdir=terraform init -backend=false -input=false
+          nix develop -c tofu -chdir=terraform validate

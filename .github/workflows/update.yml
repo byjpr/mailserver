@@ -1,0 +1,24 @@
+# Opens a pull request every week that bumps nixpkgs and the other flake
+# inputs. Merging it (after CI passes) and running `just deploy` - or letting
+# settings.autoUpgrade pick it up - keeps the server patched.
+name: Update flake inputs
+
+on:
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+      - uses: DeterminateSystems/update-flake-lock@v24
+        with:
+          pr-title: "Update flake inputs"
+          pr-labels: dependencies

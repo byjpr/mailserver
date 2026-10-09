@@ -1,0 +1,17 @@
+# Terraform / OpenTofu
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/settings.auto.tfvars.json
+terraform/terraform.tfvars
+terraform/crash.log
+
+# Nix
+result
+result-*
+.direnv/
+
+# Never commit plaintext keys
+*.pem
+*.key
+!secrets/*.enc
