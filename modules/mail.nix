@@ -15,6 +15,11 @@ let
   # us mail claiming to come from them on port 25 without authenticating.
   localSenderDomains = lib.unique (settings.domains ++ [ fqdn ]);
 
+  # Recorded by `just install` (machine.json) from the provider's Terraform
+  # outputs: the addresses reverse DNS was set for.
+  publicIPv4 = if ctx.machine != null then ctx.machine.publicIPv4 or "" else "";
+  publicIPv6 = if ctx.machine != null then ctx.machine.publicIPv6 or "" else "";
+
   dkimSecret = domain: selector: "dkim/${domain}/${selector}";
   mailboxSecret = address: "mailbox/${address}";
 
@@ -157,6 +162,13 @@ in
 
     # Record the TLS version and cipher in Received headers.
     smtpd_tls_received_header = true;
+
+    # Send from exactly the addresses that have reverse DNS. Otherwise a
+    # second address (e.g. a SLAAC IPv6 address next to the one the provider
+    # assigned) may become the source, and Gmail & co. reject mail from
+    # addresses without a matching PTR record.
+    smtp_bind_address = lib.mkIf (publicIPv4 != "") publicIPv4;
+    smtp_bind_address6 = lib.mkIf (publicIPv6 != "") publicIPv6;
   };
 
   services.postfix.mapFiles."local_sender_domains" = pkgs.writeText "local_sender_domains" (
