@@ -1,7 +1,8 @@
-# Terraform / OpenTofu (state stays local; see README)
+# Terraform / OpenTofu. terraform.tfstate itself is committed, encrypted
+# with OpenTofu state encryption (see scripts/lib.sh).
 .terraform/
-*.tfstate
-*.tfstate.*
+*.tfstate.backup
+*.tfstate.*.backup
 *.auto.tfvars.json
 terraform.tfvars
 crash.log
