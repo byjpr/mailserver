@@ -100,8 +100,25 @@ If your age key leaks, generate a new one, update `.sops.yaml`, run
 
 ## Not covered
 
-- **Encryption at rest.** The server's disk isn't encrypted (an unattended
-  server would need the key on the same machine).
+- **Encryption at rest** (accepted risk). The disk is not encrypted, so
+  whoever can read the provider's storage, snapshots or disk images can read
+  all mail and the server's SSH host key (and with it, all secrets). Full-disk
+  encryption on an unattended VM doesn't change that much: the unlock key
+  must be on the machine, or someone must type it after every reboot. The
+  options, from most to least effort:
+  - **End-to-end encryption** (OpenPGP or S/MIME) for mail that matters: the
+    only option that also protects against a compromised server.
+  - **Dovecot `mail_crypt`** with per-user keys derived from the user's
+    password: mail is encrypted on disk and only readable while the user is
+    logged in. Breaks server-side features that need to read mail (search
+    indexes, Sieve on stored mail) and makes a forgotten password fatal.
+  - **LUKS with remote unlock**: full-disk encryption, unlocked over SSH in
+    the initrd (`boot.initrd.network.ssh`) after every reboot. Protects
+    discarded disks and offline snapshots, not a running server; reboots
+    (and therefore kernel updates) then need you.
+
+  The off-site backups (`docs/backups.md`) are encrypted by restic before
+  they leave the server.
 - **Virus scanning** (ClamAV) is off because of the 1 GB RAM budget; see the
   README.
 - **DNSSEC** for your own zones is up to your DNS host; turn it on in
