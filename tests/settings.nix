@@ -27,6 +27,11 @@ import ../settings.nix
   forwards = {
     "someone@example.org" = "someone@elsewhere.test";
   };
+  dmarc = {
+    policy = "reject";
+    reportAddress = "dmarc-reports@example.com";
+    enforceInbound = false;
+  };
   sshKeys = [
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl ci@example"
   ];

@@ -85,6 +85,12 @@
     policy = "reject";
     # Where other providers send aggregate DMARC reports.
     reportAddress = "dmarc-reports@example.com";
+    # Enforce other domains' DMARC policies on incoming mail: reject mail
+    # failing p=reject, mark mail failing p=quarantine as spam. This is what
+    # stops phishing "from" banks and the like. Mailing lists that modify
+    # messages without rewriting From: can then be rejected; set to false to
+    # only score DMARC failures instead (see docs/deliverability.md).
+    enforceInbound = true;
   };
 
   # SMTP TLS reporting (RFC 8460) address.
