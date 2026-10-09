@@ -49,6 +49,10 @@ build:
 deploy action="switch":
     scripts/deploy.sh {{action}}
 
+# Reboot the server (e.g. after a kernel update) and wait until it is back
+reboot:
+    scripts/reboot.sh
+
 # Update nixpkgs and the other inputs (then: just deploy)
 update:
     nix flake update
