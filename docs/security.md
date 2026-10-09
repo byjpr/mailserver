@@ -76,7 +76,7 @@ misdirected message.
 | nginx answers only for the mail host and the MTA-STS names; anything else gets a closed connection. No version banner | `web.nix` |
 | The Rspamd web UI is only on a local Unix socket | SNM |
 | Services run under systemd sandboxing where SNM/nixpkgs provide it | SNM, nixpkgs |
-| Weekly `flake.lock` update PR (GitHub Action), optional nightly auto-upgrade with reboot window | `.github/workflows/update.yml`, `hardening.nix` |
+| Weekly `flake.lock` update PR, built and checked before it is opened; `just deploy` says when a reboot is needed for a new kernel (`just reboot`); optional nightly auto-upgrade with reboot window. Note that with `autoUpgrade` on, push access to the branch is root access to the server | `.github/workflows/update.yml`, `scripts/deploy.sh`, `hardening.nix` |
 | The server can't be destroyed by Terraform accidentally (`prevent_destroy`) | `infra/servers/*/main.tf` |
 | The provider's SMTP-blocking network firewall is turned off on netcup (its default "Mail block" policy), with the host firewall doing the filtering | `infra/servers/netcup/main.tf` |
 

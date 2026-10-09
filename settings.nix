@@ -117,10 +117,16 @@
   # Messages larger than this are rejected (bytes). 25 MiB.
   messageSizeLimit = 26214400;
 
-  # Pull and apply this flake from git every night (security updates). Only
-  # works once the repo is pushed somewhere the server can read; for a private
-  # GitHub repo, use "git+ssh://..." with a deploy key, or leave this off and
-  # run `just update && just deploy` yourself.
+  # Pull and apply this flake from git every night, rebooting between 03:00
+  # and 06:00 when the kernel changed. Only works once the repo is pushed
+  # somewhere the server can read; for a private GitHub repo, use
+  # "git+ssh://..." with a read-only deploy key.
+  #
+  # It applies whatever is on that branch: anyone who can push to it gets
+  # root on this server. Protect the branch (required reviews, no force
+  # pushes) and keep 2FA on the account. It only picks up updates you have
+  # merged (the weekly update pull request), it does not update inputs
+  # itself. Without it, run `just update && just deploy && just reboot`.
   autoUpgrade = {
     enable = false;
     flake = "github:your-user/mailserver";
