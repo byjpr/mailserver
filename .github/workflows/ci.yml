@@ -33,7 +33,12 @@ jobs:
       - uses: cachix/install-nix-action@v31
       - name: Validate
         run: |
-          nix eval --json .#tfvars | jq '{mail: .}' > terraform/settings.auto.tfvars.json
-          nix develop -c tofu -chdir=terraform fmt -check
-          nix develop -c tofu -chdir=terraform init -backend=false -input=false
-          nix develop -c tofu -chdir=terraform validate
+          nix eval --json .#tfvars | jq '{mail: .}' > settings.auto.tfvars.json
+          nix develop -c tofu fmt -check -recursive infra
+          for dir in infra/servers/* infra/dns/*; do
+            echo "::group::$dir"
+            cp settings.auto.tfvars.json "$dir/"
+            nix develop -c tofu -chdir="$dir" init -backend=false -input=false
+            nix develop -c tofu -chdir="$dir" validate
+            echo "::endgroup::"
+          done

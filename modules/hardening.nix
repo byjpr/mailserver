@@ -11,7 +11,8 @@
   # --- SSH: keys only, modern algorithms, root only via key -----------------
   services.openssh = {
     enable = true;
-    openFirewall = true;
+    # Opened below, possibly only for settings.sshAllowedCidrs.
+    openFirewall = false;
     settings = {
       PasswordAuthentication = false;
       KbdInteractiveAuthentication = false;
@@ -87,13 +88,27 @@
   };
 
   # --- Firewall -------------------------------------------------------------
-  # Only the ports opened by the mail and web modules are reachable. The
-  # DigitalOcean cloud firewall (terraform/) enforces the same set upstream.
-  networking.firewall = {
-    enable = true;
-    allowPing = true;
-    logRefusedConnections = false;
-  };
+  # Only the ports opened by the mail and web modules (and SSH) are
+  # reachable. Most providers here have no usable cloud firewall, so this
+  # host firewall is the one that counts.
+  networking.firewall =
+    let
+      cidrs = settings.sshAllowedCidrs;
+      v4 = lib.filter (c: !lib.hasInfix ":" c) cidrs;
+      v6 = lib.filter (c: lib.hasInfix ":" c) cidrs;
+      everyone = lib.elem "0.0.0.0/0" v4 && lib.elem "::/0" v6;
+      set = l: "{ ${lib.concatStringsSep ", " l} }";
+    in
+    {
+      enable = true;
+      allowPing = true;
+      logRefusedConnections = false;
+      allowedTCPPorts = lib.mkIf everyone [ 22 ];
+      extraInputRules = lib.mkIf (!everyone) (
+        lib.optionalString (v4 != [ ]) "ip saddr ${set v4} tcp dport 22 accept\n"
+        + lib.optionalString (v6 != [ ]) "ip6 saddr ${set v6} tcp dport 22 accept\n"
+      );
+    };
   networking.nftables.enable = true;
 
   # --- Kernel ---------------------------------------------------------------

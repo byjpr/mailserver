@@ -1,18 +1,20 @@
 #!/usr/bin/env bash
 # Print every DNS record the setup needs, in zone-file notation. Use this when
-# DNS is hosted somewhere other than DigitalOcean (settings.manageDns = false).
+# DNS is not managed by Terraform (settings.dns = "manual").
 source "$(dirname "$0")/lib.sh"
 cd "$ROOT"
 
-ip4="$(tofu -chdir=terraform output -raw ipv4 2>/dev/null || echo '<droplet IPv4>')"
-ip6="$(tofu -chdir=terraform output -raw ipv6 2>/dev/null || echo '<droplet IPv6>')"
+ip4="$(tofu_server output -raw ipv4 2>/dev/null || echo '<server IPv4>')"
+ip6="$(tofu_server output -raw ipv6 2>/dev/null || echo '<server IPv6>')"
 name="$(fqdn)"
 
 echo "; Mail host"
 echo "$name. 3600 IN A    $ip4"
-echo "$name. 3600 IN AAAA $ip6"
-echo "; Reverse DNS (PTR) for both addresses must be $name. — DigitalOcean sets"
-echo "; this automatically because the droplet is named $name."
+[[ -z "$ip6" ]] || echo "$name. 3600 IN AAAA $ip6"
+echo "; Reverse DNS (PTR) for each address must be $name. ('just apply' sets it"
+echo "; where the provider allows; see docs/providers.md)"
+echo "; TXT values over 255 characters (DKIM) may need splitting into quoted"
+echo "; 255-character strings, depending on your DNS host."
 echo
 nix eval --json "$ROOT#tfvars.dnsRecords" | jq -r '
   .[] |

@@ -35,9 +35,14 @@ rec {
       settings,
       dkimDir,
       secretsFile,
+      machineFile,
     }:
     let
       fqdn = "${settings.hostname}.${settings.primaryDomain}";
+      provider =
+        (import ./providers.nix).${settings.provider}
+          or (throw "settings.nix: unknown provider '${settings.provider}'");
+      machine = if builtins.pathExists machineFile then lib.importJSON machineFile else null;
       dkimKeys = readDkimKeys dkimDir;
 
       mtaStsPolicy = ''
@@ -63,6 +68,8 @@ rec {
     {
       inherit
         secretsFile
+        provider
+        machine
         fqdn
         dkimKeys
         mtaStsPolicy
@@ -84,7 +91,7 @@ rec {
     };
 
   # DNS records for every mail domain, excluding the A/AAAA records for the
-  # mail host itself (Terraform adds those once it knows the droplet's IPs).
+  # mail host itself (Terraform adds those once it knows the server's IPs).
   # Names are relative to the zone ("@" is the zone apex).
   dnsRecords =
     {

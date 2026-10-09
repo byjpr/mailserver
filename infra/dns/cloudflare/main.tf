@@ -20,7 +20,7 @@ terraform {
 provider "cloudflare" {}
 
 variable "mail" {
-  description = "Generated from settings.nix by `just tfvars`."
+  description = "Generated from settings.nix by `just apply`."
   type        = any
 }
 
@@ -40,15 +40,15 @@ data "cloudflare_zone" "mail" {
 locals {
   host_records = [
     for type, ip in { A = var.server.ipv4, AAAA = var.server.ipv6 } : {
-      domain   = var.mail.primaryDomain
-      type     = type
-      name     = var.mail.hostname
-      value    = ip
-      priority = null
-      weight   = null
-      port     = null
-      flags    = null
-      tag      = null
+      domain            = var.mail.primaryDomain
+      type              = type
+      name              = var.mail.hostname
+      value             = ip
+      priority          = null
+      weight            = null
+      port              = null
+      flags             = null
+      tag               = null
     } if ip != ""
   ]
 
@@ -69,7 +69,7 @@ resource "cloudflare_dns_record" "mail" {
   proxied = false
 
   # MX, CNAME, TXT, A and AAAA use `content`; SRV and CAA use `data`.
-  content = contains(["SRV", "CAA"], each.value.type) ? null : trimsuffix(each.value.value, ".")
+  content  = contains(["SRV", "CAA"], each.value.type) ? null : trimsuffix(each.value.value, ".")
   priority = each.value.type == "MX" ? each.value.priority : null
 
   data = contains(["SRV", "CAA"], each.value.type) ? {

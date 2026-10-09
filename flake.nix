@@ -39,10 +39,18 @@
           settings,
           dkimDir,
           secretsFile,
+          machineFile,
           extraModules ? [ ],
         }:
         let
-          ctx = mailLib.mkContext { inherit settings dkimDir secretsFile; };
+          ctx = mailLib.mkContext {
+            inherit
+              settings
+              dkimDir
+              secretsFile
+              machineFile
+              ;
+          };
         in
         {
           inherit ctx;
@@ -53,7 +61,8 @@
               disko.nixosModules.disko
               sops-nix.nixosModules.sops
               simple-nixos-mailserver.nixosModules.default
-              ./modules/digitalocean.nix
+              ./modules/machine.nix
+              ./providers/${settings.provider}.nix
               ./modules/hardening.nix
               ./modules/mail.nix
               ./modules/relay.nix
@@ -72,6 +81,7 @@
         inherit settings;
         dkimDir = ./dkim;
         secretsFile = ./secrets/secrets.yaml;
+        machineFile = ./machine.json;
         extraModules = [
           {
             assertions = [
@@ -84,13 +94,19 @@
         ];
       };
 
-      # A fixed configuration with test fixtures, so CI can build the modules
-      # even before `just init` has created real keys.
-      example = mkMailServer {
-        settings = import ./tests/settings.nix;
-        dkimDir = ./tests/dkim;
-        secretsFile = ./tests/no-secrets.yaml;
-      };
+      # Fixed configurations with test fixtures, one per provider, so CI can
+      # build the modules even before `just init` has created real keys.
+      examples = lib.genAttrs (lib.attrNames (import ./lib/providers.nix)) (
+        provider:
+        mkMailServer {
+          settings = import ./tests/settings.nix // {
+            inherit provider;
+          };
+          dkimDir = ./tests/dkim;
+          secretsFile = ./tests/no-secrets.yaml;
+          machineFile = ./tests/machine.json;
+        }
+      );
 
       devSystems = [
         "x86_64-linux"
@@ -104,15 +120,20 @@
       nixosConfigurations.mail = mail.system;
 
       # Everything Terraform needs, derived from settings.nix and dkim/.
-      # Exported by `just tfvars` to terraform/settings.auto.tfvars.json.
+      # Written by `just apply` to infra/*/settings.auto.tfvars.json.
       tfvars = {
-        inherit (settings) primaryDomain domains;
+        inherit (settings)
+          hostname
+          primaryDomain
+          domains
+          sshKeys
+          sshAllowedCidrs
+          provider
+          dns
+          ;
         inherit (mail.ctx) fqdn dnsRecords;
-        hostname = settings.hostname;
-        sshKeys = settings.sshKeys;
-        sshAllowedCidrs = settings.sshAllowedCidrs;
-        manageDns = settings.manageDns;
-        droplet = settings.droplet;
+        server = settings.server.${settings.provider};
+        providerInfo = mail.ctx.provider;
       };
 
       devShells = forDevSystems (pkgs: {
@@ -131,6 +152,9 @@
             nixos-anywhere
             nixos-rebuild-ng
             nixfmt
+            curl
+            # OVHcloud: reinstalls a newly ordered VPS with your SSH key
+            (python3.withPackages (ps: [ ps.ovh ]))
           ];
         };
       });
@@ -139,12 +163,17 @@
 
       # Build the complete system closure: catches option typos, failed
       # assertions and broken packages before anything reaches the server.
-      # `system` only exists once `just init` has created the secrets.
-      checks.x86_64-linux = {
-        example = example.system.config.system.build.toplevel;
-      }
-      // lib.optionalAttrs (builtins.pathExists ./secrets/secrets.yaml) {
-        system = self.nixosConfigurations.mail.config.system.build.toplevel;
-      };
+      # `system` only exists once `just init` has created the secrets and
+      # `just install` has recorded machine.json.
+      checks.x86_64-linux =
+        lib.mapAttrs' (
+          provider: example:
+          lib.nameValuePair "example-${provider}" example.system.config.system.build.toplevel
+        ) examples
+        //
+          lib.optionalAttrs (builtins.pathExists ./secrets/secrets.yaml && builtins.pathExists ./machine.json)
+            {
+              system = self.nixosConfigurations.mail.config.system.build.toplevel;
+            };
     };
 }

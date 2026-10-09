@@ -2,7 +2,7 @@
 # This is the only file you normally need to edit.
 #
 # Both the NixOS configuration (flake.nix -> modules/) and the Terraform
-# infrastructure (terraform/, via `just tfvars`) are generated from it, so
+# infrastructure (infra/, written by `just apply`) are generated from it, so
 # domains, mailboxes and DNS can never drift apart.
 #
 # After editing:
@@ -12,7 +12,7 @@
 {
   # The mail server's own name is "<hostname>.<primaryDomain>", e.g.
   # mail.example.com. It is used for the MX target, the TLS certificate, the
-  # SMTP banner/HELO and the reverse DNS (PTR) record of the droplet.
+  # SMTP banner/HELO and the reverse DNS (PTR) record of the server.
   hostname = "mail";
   primaryDomain = "example.com";
 
@@ -64,13 +64,15 @@
   adminEmail = "admin@example.com";
 
   # SSH public keys allowed to log in as root (key auth only; passwords are
-  # disabled). These are also uploaded to DigitalOcean for the first boot.
+  # disabled). The first one is also given to the provider for the initial
+  # login before NixOS is installed.
   sshKeys = [
     # "ssh-ed25519 AAAA... you@laptop"
   ];
 
-  # Restrict SSH to these networks at the DigitalOcean cloud firewall. Mail
-  # ports are always open to the world. Narrow this if you have a static IP.
+  # Only accept SSH from these networks (enforced by the host firewall).
+  # Mail ports are always open to the world. Narrow this if you have a
+  # static IP or a VPN.
   sshAllowedCidrs = [
     "0.0.0.0/0"
     "::/0"
@@ -92,9 +94,9 @@
   # to you. Use "testing" while you set things up, then "enforce".
   mtaSts.mode = "enforce";
 
-  # Outbound relay ("smarthost"). DigitalOcean blocks outbound port 25 on
-  # new accounts; ask support to lift it, or send through a relay instead.
-  # Put the relay password in the secrets with `just relay-password`.
+  # Outbound relay ("smarthost"), for providers that block outbound port 25
+  # or while a new IP builds reputation. Put the relay password in the
+  # secrets with `just relay-password`.
   relay = {
     enable = false;
     host = "smtp.postmarkapp.com"; # or email-smtp.<region>.amazonaws.com, smtp.mailgun.org, ...
@@ -126,18 +128,53 @@
 
   timeZone = "UTC";
 
-  # DigitalOcean droplet. s-1vcpu-1gb is the smallest size that comfortably
-  # runs Postfix + Dovecot + Rspamd + Redis (virus scanning is disabled;
-  # ClamAV alone needs >1 GB).
-  droplet = {
-    region = "fra1";
-    size = "s-1vcpu-1gb";
-    # Weekly droplet snapshots (+20% of droplet price). Your mail lives on
-    # this disk, so keep this on unless you have your own backups.
-    backups = true;
+  # Where the server runs. Each provider has a Terraform step in
+  # infra/servers/<provider> and notes in docs/providers.md.
+  #
+  #   "ovh"          OVHcloud VPS. Port 25 open by default. Recommended.
+  #   "netcup"       netcup VPS/root server. Order it manually, then set
+  #                  server.netcup.serverId. Port 25 opened automatically.
+  #   "upcloud"      UpCloud. Port 25 blocked until Support lifts it.
+  #   "serverspace"  Serverspace vStack. IPv4 only; PTR and port 25 by ticket.
+  #   "digitalocean" DigitalOcean. Port 25 blocked; only usable with `relay`.
+  provider = "ovh";
+
+  # Size and location per provider; only the selected provider's entry is
+  # used. 2 GB of RAM is the minimum the installer (nixos-anywhere) needs.
+  server = {
+    ovh = {
+      plan = "vps-2027-model1"; # 2 vCPU, 4 GB, 40 GB; about 4.50 EUR/month
+      # GRA, SBG, RBX ("EU-WEST-RBX"), DE, UK, WAW, BHS, SGP, SYD, ...
+      location = "GRA";
+      image = "Debian 13"; # only used until `just install` replaces it
+    };
+    netcup = {
+      # SCP -> your server -> "General" -> server ID (a number).
+      serverId = 0;
+    };
+    upcloud = {
+      plan = "STARTER-1xCPU-2GB"; # 1 vCPU, 2 GB, 20 GB; about 6 EUR/month
+      location = "de-fra1"; # fi-hel1, nl-ams1, uk-lon1, se-sto1, ...
+      diskSize = 20; # GB
+      backups = true; # daily, kept 7 days (billed per GB)
+    };
+    serverspace = {
+      location = "nj3"; # `just apply` lists valid ids if this one is wrong
+      image = "Debian-12-X64";
+      cpu = 1;
+      ramMB = 2048;
+      diskSize = 25; # GB
+      bandwidthMbps = 50;
+    };
+    digitalocean = {
+      region = "fra1";
+      size = "s-1vcpu-2gb";
+      backups = true;
+    };
   };
 
-  # Manage all DNS records with Terraform in DigitalOcean DNS. Set to false
-  # if your DNS is hosted elsewhere; `just dns` then prints the records.
-  manageDns = true;
+  # Where the DNS records for your domains are created.
+  #   "cloudflare"  by Terraform (zones must already exist in Cloudflare)
+  #   "manual"      `just dns` prints them for you to enter anywhere
+  dns = "cloudflare";
 }

@@ -25,21 +25,19 @@ relay-password:
 secrets:
     sops secrets/secrets.yaml
 
-# Export settings.nix + DKIM public keys for Terraform
-tfvars:
-    nix eval --json .#tfvars | jq '{mail: .}' > terraform/settings.auto.tfvars.json
+# Show the server changes Terraform would make
+plan:
+    scripts/apply.sh plan
 
-# Show the infrastructure / DNS changes Terraform would make
-plan: tfvars
-    tofu -chdir=terraform init -upgrade=false > /dev/null
-    tofu -chdir=terraform plan
+# Create / update the server, its reverse DNS and all DNS records
+apply:
+    scripts/apply.sh
 
-# Create / update the droplet, firewall and DNS records
-apply: tfvars
-    tofu -chdir=terraform init -upgrade=false > /dev/null
-    tofu -chdir=terraform apply
+# Get an API token for the netcup Server Control Panel (provider = netcup)
+netcup-login:
+    scripts/netcup-login.sh
 
-# First install: wipe the droplet and install NixOS on it
+# First install: wipe the server and install NixOS on it
 install:
     scripts/install.sh
 
@@ -55,7 +53,7 @@ deploy action="switch":
 update:
     nix flake update
 
-# Print the DNS records (for DNS hosted outside DigitalOcean)
+# Print the DNS records (for dns = "manual")
 dns:
     scripts/dns.sh
 
@@ -73,4 +71,4 @@ logs:
 
 fmt:
     nix fmt
-    tofu fmt terraform
+    tofu fmt -recursive infra

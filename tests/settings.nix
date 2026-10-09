@@ -30,6 +30,10 @@ import ../settings.nix
   sshKeys = [
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl ci@example"
   ];
+  sshAllowedCidrs = [
+    "198.51.100.0/24"
+    "2001:db8:1::/48"
+  ];
   relay = {
     enable = true;
     host = "smtp.relay.test";

@@ -41,6 +41,24 @@ sops_set() {
   sops set "$SECRETS" "$path" "$(jq -Rn --arg v "$value" '$v')"
 }
 
+# The flake's Terraform variables (settings.nix + DKIM keys) as JSON.
+tfvars() {
+  nix eval --json "$ROOT#tfvars"
+}
+
+provider() {
+  setting provider | jq -r .
+}
+
+server_dir() {
+  echo "$ROOT/infra/servers/$(provider)"
+}
+
+# tofu in the selected provider's server step.
+tofu_server() {
+  tofu -chdir="$(server_dir)" "$@"
+}
+
 ssh_opts() {
   echo "-o UserKnownHostsFile=$KNOWN_HOSTS -o StrictHostKeyChecking=yes"
 }

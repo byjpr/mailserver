@@ -3,7 +3,6 @@
 { ... }:
 {
   mailserver.machine = {
-    disk = "/dev/vda";
     # Public addresses come from the metadata service, not DHCP/SLAAC.
     network = {
       method = "cloud-init";

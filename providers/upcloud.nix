@@ -3,7 +3,6 @@
 { ... }:
 {
   mailserver.machine = {
-    disk = "/dev/vda";
     network.method = "dhcp";
   };
 }

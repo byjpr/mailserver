@@ -5,12 +5,16 @@
   config,
   lib,
   modulesPath,
-  settings,
+  ctx,
   ...
 }:
 let
   cfg = config.mailserver.machine;
   net = cfg.network;
+
+  # Facts about the actual server (disk device, addresses), recorded by
+  # `just install` in machine.json. null before the first install.
+  machine = ctx.machine;
 
   staticAddress = lib.types.submodule {
     options = {
@@ -26,7 +30,7 @@ in
   options.mailserver.machine = {
     disk = lib.mkOption {
       type = lib.types.str;
-      default = "/dev/vda";
+      default = if machine != null then machine.disk else "/dev/vda";
       description = "Disk that disko partitions on install (wiped!).";
     };
 
@@ -50,16 +54,15 @@ in
       };
       ipv4 = lib.mkOption {
         type = lib.types.nullOr staticAddress;
-        default = null;
+        default = if machine != null && net.method == "static" then machine.ipv4 else null;
         description = "Static IPv4 configuration (method = static).";
       };
       ipv6 = lib.mkOption {
         type = lib.types.nullOr staticAddress;
-        default = null;
+        default = if machine != null && net.method == "static" then machine.ipv6 else null;
         description = ''
-          Static IPv6 configuration. Used with method = static, and also
-          added on top of DHCP for providers that route a /64 to the server
-          without announcing it.
+          Static IPv6 configuration (method = static). Can also be set on top
+          of DHCP for providers that route a /64 without announcing it.
         '';
       };
     };
@@ -134,17 +137,21 @@ in
 
     (lib.mkIf (net.method == "dhcp" || net.method == "static") {
       systemd.network.networks."10-wan" = {
-        # Every Ethernet NIC: some providers attach one NIC per address.
-        matchConfig.Type = "ether";
+        # Static addresses go on the NIC recorded at install time; with DHCP,
+        # every Ethernet NIC (UpCloud attaches one NIC per address).
+        matchConfig =
+          if net.method == "static" && machine != null && (machine.mac or null) != null then
+            { MACAddress = machine.mac; }
+          else
+            { Type = "ether"; };
         networkConfig = {
           DHCP = if net.method == "dhcp" then "yes" else "no";
           IPv6AcceptRA = net.method == "dhcp";
           IPv6PrivacyExtensions = false;
         };
-        address = lib.optional (
-          net.ipv4 != null
-        ) "${net.ipv4.address}/${toString net.ipv4.prefixLength}"
-        ++ lib.optional (net.ipv6 != null) "${net.ipv6.address}/${toString net.ipv6.prefixLength}";
+        address =
+          lib.optional (net.ipv4 != null) "${net.ipv4.address}/${toString net.ipv4.prefixLength}"
+          ++ lib.optional (net.ipv6 != null) "${net.ipv6.address}/${toString net.ipv6.prefixLength}";
         routes =
           # GatewayOnLink: several providers use a gateway outside the
           # server's own subnet (or a /32 address).
@@ -189,7 +196,7 @@ in
       assertions = [
         {
           assertion = net.method != "static" || net.ipv4 != null;
-          message = "settings.nix: this provider needs server.network.ipv4 (address, prefixLength, gateway).";
+          message = "This provider needs a static network configuration from machine.json, which `just install` records. Run `just install` (or write machine.json by hand).";
         }
         {
           assertion = net.method != "cloud-init" || net.cloudInitDatasource != "";

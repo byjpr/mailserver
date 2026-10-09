@@ -1,10 +1,10 @@
-# Terraform / OpenTofu
-terraform/.terraform/
-terraform/*.tfstate
-terraform/*.tfstate.*
-terraform/settings.auto.tfvars.json
-terraform/terraform.tfvars
-terraform/crash.log
+# Terraform / OpenTofu (state stays local; see README)
+.terraform/
+*.tfstate
+*.tfstate.*
+*.auto.tfvars.json
+terraform.tfvars
+crash.log
 
 # Nix
 result
@@ -15,3 +15,6 @@ result-*
 *.pem
 *.key
 !secrets/*.enc
+
+# Python
+__pycache__/

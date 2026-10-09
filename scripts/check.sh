@@ -16,11 +16,13 @@ echo "Mail host $name"
 ip4="$(q A "$name" | tail -n1)"
 ip6="$(q AAAA "$name" | tail -n1)"
 [[ -n "$ip4" ]] && ok "A $ip4" || bad "no A record for $name"
-[[ -n "$ip6" ]] && ok "AAAA $ip6" || bad "no AAAA record for $name"
+if tfvars | jq -e .providerInfo.hasIPv6 > /dev/null; then
+  [[ -n "$ip6" ]] && ok "AAAA $ip6" || bad "no AAAA record for $name"
+fi
 for ip in $ip4 $ip6; do
   ptr="$(q -x "$ip" | head -n1)"
   [[ "$ptr" == "$name." ]] && ok "PTR $ip -> $ptr" \
-    || bad "PTR for $ip is '$ptr', expected '$name.' (the droplet name sets it)"
+    || bad "PTR for $ip is '$ptr', expected '$name.' (see docs/providers.md)"
 done
 
 for port in 465 993; do

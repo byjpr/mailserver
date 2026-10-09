@@ -1,5 +1,5 @@
 variable "mail" {
-  description = "Generated from settings.nix by `just tfvars`. Do not edit by hand."
+  description = "Generated from settings.nix by `just apply`. Do not edit by hand."
   type        = any
 }
 
