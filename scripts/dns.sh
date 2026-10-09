@@ -19,6 +19,6 @@ nix eval --json "$ROOT#tfvars.dnsRecords" | jq -r '
   (if .name == "@" then .domain else "\(.name).\(.domain)" end) as $fqdn |
   if .type == "MX" then "\($fqdn). 3600 IN MX \(.priority) \(.value)"
   elif .type == "SRV" then "\($fqdn). 3600 IN SRV \(.priority) \(.weight) \(.port) \(.value)"
-  elif .type == "CAA" then "\($fqdn). 3600 IN CAA \(.flags) \(.tag) \"\(.value | rtrimstr("."))\""
+  elif .type == "CAA" then "\($fqdn). 3600 IN CAA \(.flags) \(.tag) \"\(.value)\""
   elif .type == "TXT" then "\($fqdn). 3600 IN TXT \"\(.value)\""
   else "\($fqdn). 3600 IN \(.type) \(.value)" end'

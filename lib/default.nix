@@ -173,12 +173,22 @@ rec {
           domain = settings.primaryDomain;
           type = "CAA";
           name = hostName;
-          # Trailing dot: the DigitalOcean API stores CAA values that way.
-          value = "letsencrypt.org.";
+          value = "letsencrypt.org";
           flags = 0;
           tag = "issue";
         }
       ];
+      # Give every record the same set of fields so Terraform sees one type.
+      normalise =
+        r:
+        {
+          priority = null;
+          weight = null;
+          port = null;
+          flags = null;
+          tag = null;
+        }
+        // r;
     in
-    lib.concatMap forDomain settings.domains ++ hostRecords;
+    map normalise (lib.concatMap forDomain settings.domains ++ hostRecords);
 }

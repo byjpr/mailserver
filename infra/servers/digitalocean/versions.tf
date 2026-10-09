@@ -8,7 +8,7 @@ terraform {
     }
   }
 
-  # State is kept locally in terraform/terraform.tfstate (git-ignored). It
+  # State is kept locally in terraform.tfstate (git-ignored). It
   # contains no secrets beyond IDs and IPs, but losing it means importing the
   # resources again. For a team, use a remote backend such as DigitalOcean
   # Spaces (S3-compatible):
