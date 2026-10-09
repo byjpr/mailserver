@@ -95,8 +95,29 @@ misdirected message.
   plaintext on purpose: they are needed to generate DNS records and
   `known_hosts`.
 
-If your age key leaks, generate a new one, update `.sops.yaml`, run
-`sops updatekeys secrets/*`, and rotate the mailbox passwords and DKIM keys.
+### Keep the repository private
+
+- `settings.nix` lists every mailbox, alias and forward. In a public
+  repository that is a ready-made target list for spam, phishing and
+  password guessing. Host this repository privately.
+- The secrets are encrypted, but only as strong as the age keys, forever:
+  every old ciphertext stays in git history. Publishing the repository (or
+  having it leak) means relying on those keys never leaking later.
+
+### After a key leaks, rotate the secrets, not just the keys
+
+Removing a recipient from `.sops.yaml` and running `sops updatekeys` only
+protects *future* commits; earlier commits stay decryptable with the old
+key. If your age key or the server's host key leaks:
+
+1. Generate a new key and replace it in `.sops.yaml`; for the server key,
+   also replace `secrets/ssh_host_ed25519_key*` (as `scripts/init.sh` does)
+   and reinstall.
+2. `sops updatekeys secrets/*`.
+3. Rotate every secret: mailbox passwords (`just passwd`), DKIM keys
+   (`just add-domain <domain>` with a new selector, deploy, then delete the
+   old selector), relay and backup credentials, the Terraform state
+   passphrase, and any provider API tokens stored in the secrets.
 
 ## Not covered
 
