@@ -177,6 +177,19 @@ in
       }
     '';
 
+    # Greylisting only applies to mail that already looks suspicious (spam
+    # score >= greylisting.minScore): its first delivery attempt is deferred
+    # and legitimate servers retry a few minutes later; most spam bots don't.
+    "greylist.conf".text =
+      if settings.greylisting.enable then
+        ''
+          greylist_min_score = ${toString settings.greylisting.minScore};
+        ''
+      else
+        ''
+          enabled = false;
+        '';
+
     # Cap how much mail one authenticated account can send, so a leaked
     # password can't turn the server into a spam cannon (and get its IP
     # blocklisted).
