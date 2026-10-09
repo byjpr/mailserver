@@ -149,8 +149,14 @@ in
           IPv6AcceptRA = net.method == "dhcp";
           IPv6PrivacyExtensions = false;
         };
+        # With DHCP, also add the provider-assigned IPv6 address (the one with
+        # reverse DNS, which Postfix sends from) in case DHCPv6/SLAAC picks
+        # another one.
         address =
-          lib.optional (net.ipv4 != null) "${net.ipv4.address}/${toString net.ipv4.prefixLength}"
+          lib.optional (
+            net.method == "dhcp" && machine != null && (machine.publicIPv6 or "") != ""
+          ) "${machine.publicIPv6}/128"
+          ++ lib.optional (net.ipv4 != null) "${net.ipv4.address}/${toString net.ipv4.prefixLength}"
           ++ lib.optional (net.ipv6 != null) "${net.ipv6.address}/${toString net.ipv6.prefixLength}";
         routes =
           # GatewayOnLink: several providers use a gateway outside the

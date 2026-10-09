@@ -35,6 +35,13 @@ if tofu_server output -json network > "$tmp/network.json" 2> /dev/null; then
 fi
 "$ROOT/scripts/detect-machine.sh" "$user@$ip" "$tf_network"
 
+# The addresses the provider assigned, and that reverse DNS was set for.
+# Postfix sends from exactly these (see modules/mail.nix).
+ipv6="$(tofu_server output -raw ipv6)"
+jq --arg v4 "$ip" --arg v6 "$ipv6" '. + {publicIPv4: $v4, publicIPv6: $v6}' machine.json > machine.json.tmp
+mv machine.json.tmp machine.json
+git add machine.json
+
 install -d -m 755 "$tmp/root/etc/ssh"
 (umask 077 && sops decrypt --input-type binary --output-type binary "$HOST_KEY_ENC" > "$tmp/root/etc/ssh/ssh_host_ed25519_key")
 cp "$HOST_KEY_PUB" "$tmp/root/etc/ssh/ssh_host_ed25519_key.pub"
