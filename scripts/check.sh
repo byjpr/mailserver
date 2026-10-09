@@ -59,7 +59,7 @@ if [[ -f "$KNOWN_HOSTS" ]]; then
       220) ok "port 25 open over IPv$family (Gmail answered from $target)" ;;
       none) [[ "$family" == 6 ]] && ok "no IPv6 route to test (IPv4-only server)" || bad "cannot resolve Gmail's MX over IPv$family" ;;
       failed) bad "could not ssh to $name to test outbound SMTP" ;;
-      *) if tfvars | jq -e .relay.enable > /dev/null 2>&1; then
+      *) if [[ "$(setting relay.enable)" == true ]]; then
            ok "port 25 over IPv$family is blocked, but relay.enable is set"
          else
            bad "port 25 to $target (IPv$family) is BLOCKED: ask the provider to open it, or set relay.enable"
