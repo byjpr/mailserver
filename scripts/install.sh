@@ -44,6 +44,15 @@ if [[ "$(uname -s)-$(uname -m)" != "Linux-x86_64" ]]; then
   build_args=(--build-on remote)
 fi
 
+# Boot an installer built from our own pinned nixpkgs (flake.lock), rather
+# than nixos-anywhere's default: the latest image from a GitHub release.
+if kexec="$(nix build --no-link --print-out-paths "$ROOT#kexec-installer" 2> /dev/null)"; then
+  build_args+=(--kexec "$kexec/nixos-kexec-installer-noninteractive-x86_64-linux.tar.gz")
+else
+  echo "warning: cannot build the x86_64-linux installer image on this machine (no" >&2
+  echo "Linux builder); falling back to nixos-anywhere's download from GitHub." >&2
+fi
+
 nixos-anywhere \
   --flake "$ROOT#mail" \
   --extra-files "$tmp/root" \
