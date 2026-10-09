@@ -165,15 +165,32 @@
       # assertions and broken packages before anything reaches the server.
       # `system` only exists once `just init` has created the secrets and
       # `just install` has recorded machine.json.
-      checks.x86_64-linux =
-        lib.mapAttrs' (
-          provider: example:
-          lib.nameValuePair "example-${provider}" example.system.config.system.build.toplevel
-        ) examples
-        //
-          lib.optionalAttrs (builtins.pathExists ./secrets/secrets.yaml && builtins.pathExists ./machine.json)
-            {
-              system = self.nixosConfigurations.mail.config.system.build.toplevel;
-            };
+      checks.x86_64-linux = {
+        # The IMAP brute-force filter must keep matching real Dovecot logs.
+        fail2ban-dovecot =
+          let
+            pkgs = nixpkgs.legacyPackages.x86_64-linux;
+            filter = (pkgs.formats.ini { }).generate "dovecot-imap.conf" (
+              import ./modules/fail2ban/dovecot-imap.nix
+            );
+          in
+          pkgs.runCommand "fail2ban-dovecot-check" { nativeBuildInputs = [ pkgs.fail2ban ]; } ''
+            mkdir -p conf/filter.d
+            cp ${pkgs.fail2ban}/etc/fail2ban/filter.d/common.conf conf/filter.d/
+            cp ${filter} conf/filter.d/dovecot-imap.conf
+            fail2ban-regex -c conf ${./tests/fail2ban/dovecot.log} dovecot-imap | tee result
+            grep -q "Lines: 7 lines, 0 ignored, 4 matched, 3 missed" result
+            touch $out
+          '';
+      }
+      // lib.mapAttrs' (
+        provider: example:
+        lib.nameValuePair "example-${provider}" example.system.config.system.build.toplevel
+      ) examples
+      //
+        lib.optionalAttrs (builtins.pathExists ./secrets/secrets.yaml && builtins.pathExists ./machine.json)
+          {
+            system = self.nixosConfigurations.mail.config.system.build.toplevel;
+          };
     };
 }

@@ -79,10 +79,15 @@
         port = "submissions";
         maxretry = 3;
       };
-      dovecot.settings = {
-        filter = "dovecot[mode=aggressive]";
-        port = "imaps";
-        maxretry = 3;
+      # fail2ban's bundled `dovecot` filter matches neither the NixOS unit
+      # name nor Dovecot 2.4's log format; see fail2ban/dovecot-imap.nix.
+      dovecot-imap = {
+        filter = import ./fail2ban/dovecot-imap.nix;
+        settings = {
+          port = "imaps";
+          maxretry = 3;
+          backend = "systemd";
+        };
       };
     };
   };
