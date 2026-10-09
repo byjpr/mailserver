@@ -114,6 +114,69 @@
     burst = 50;
   };
 
+  # Virus scanning with ClamAV. It needs 1-1.5 GB of RAM on its own, so only
+  # enable it with 4 GB or more (e.g. OVHcloud VPS-1).
+  virusScanning = false;
+
+  # Attachments with these extensions are rejected, also inside archives
+  # (Gmail blocks the same types). Mostly executables and scripts.
+  blockedAttachmentExtensions = [
+    "ade"
+    "adp"
+    "apk"
+    "appx"
+    "appxbundle"
+    "bat"
+    "cab"
+    "chm"
+    "cmd"
+    "com"
+    "cpl"
+    "diagcab"
+    "diagcfg"
+    "diagpack"
+    "dll"
+    "dmg"
+    "ex"
+    "ex_"
+    "exe"
+    "hta"
+    "img"
+    "ins"
+    "iso"
+    "isp"
+    "jar"
+    "jnlp"
+    "js"
+    "jse"
+    "lib"
+    "lnk"
+    "mde"
+    "msc"
+    "msi"
+    "msix"
+    "msixbundle"
+    "msp"
+    "mst"
+    "nsh"
+    "pif"
+    "ps1"
+    "scr"
+    "sct"
+    "shb"
+    "sys"
+    "vb"
+    "vbe"
+    "vbs"
+    "vhd"
+    "vhdx"
+    "vxd"
+    "wsc"
+    "wsf"
+    "wsh"
+    "xll"
+  ];
+
   # Messages larger than this are rejected (bytes). 25 MiB.
   messageSizeLimit = 26214400;
 

@@ -111,9 +111,8 @@ in
     # Don't leak the sender's client hostname in Message-IDs.
     rewriteMessageId = true;
 
-    # ClamAV needs well over 1 GB of RAM; Rspamd still rejects known-bad
-    # attachments and phishing via its own checks.
-    virusScanning = false;
+    # ClamAV, off by default: it needs 1-1.5 GB of RAM by itself.
+    inherit (settings) virusScanning;
     fullTextSearch.enable = false;
   };
 
@@ -174,6 +173,21 @@ in
       actions {
         reject = "reject";
         quarantine = "add header";
+      }
+    '';
+
+    # Reject attachments that are almost exclusively malware (executables,
+    # scripts, disk images, Office add-ins), also inside archives. Same idea
+    # as Gmail's blocked file types; works without ClamAV.
+    "multimap.conf".text = lib.optionalString (settings.blockedAttachmentExtensions != [ ]) ''
+      BLOCKED_ATTACHMENT {
+        type = "filename";
+        filter = "extension";
+        map = "${pkgs.writeText "blocked-extensions.map" (lib.concatLines settings.blockedAttachmentExtensions)}";
+        skip_archives = false;
+        action = "reject";
+        message = "Attachment type not accepted here (executables, scripts and disk images are blocked); send it as a link instead";
+        description = "Blocked attachment type";
       }
     '';
 
