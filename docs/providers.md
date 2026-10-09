@@ -68,8 +68,9 @@ netcup has no API for creating servers.
    SSH key for root when it is set up (SCP > Media > Images > reinstall
    "Debian" with your key, or copy it in with the emailed password).
 2. Put the server ID (SCP > server > General) into `server.netcup.serverId`.
-3. `just netcup-login`, then export the printed `NETCUP_SCP_REFRESH_TOKEN`.
-   It stays valid if used at least once every 30 days.
+3. `just netcup-login`. The resulting API token is stored encrypted in
+   `secrets/secrets.yaml` (never printed) and used by `just apply`. It stays
+   valid if used at least once every 30 days.
 
 `just apply` then sets the host name and the reverse DNS for IPv4 and the
 first address of your IPv6 /64, and **turns off netcup's network firewall**,

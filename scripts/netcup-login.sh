@@ -2,11 +2,12 @@
 # Obtain an offline refresh token for the netcup Server Control Panel API via
 # the OAuth device flow, for the netcup Terraform step.
 #
-# The token is printed, not stored: put it in your password manager and
-# export it as NETCUP_SCP_REFRESH_TOKEN before `just apply`. It stays valid as
-# long as it is used at least once every 30 days; revoke it in the SCP under
-# "Sessions" if it leaks.
+# The token can reinstall the server and read rescue-system passwords, so it
+# is never printed: it goes straight into secrets/secrets.yaml (encrypted),
+# from where `just apply` loads it. It stays valid as long as it is used at
+# least once every 30 days; revoke it in the SCP under "Sessions" if it leaks.
 source "$(dirname "$0")/lib.sh"
+require_secrets
 
 realm="https://www.servercontrolpanel.de/realms/scp/protocol/openid-connect"
 
@@ -31,5 +32,7 @@ while true; do
   esac
 done
 
-echo
-echo "export NETCUP_SCP_REFRESH_TOKEN='$(jq -r .refresh_token <<< "$response")'"
+token="$(jq -r .refresh_token <<< "$response")"
+[[ -n "$token" && "$token" != null ]] || die "no refresh token in the response"
+sops_set '["netcup"]["scp_refresh_token"]' "$token"
+info "Stored the refresh token (encrypted) in secrets/secrets.yaml; 'just apply' uses it."

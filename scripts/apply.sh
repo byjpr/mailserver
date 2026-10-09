@@ -11,6 +11,15 @@ cd "$ROOT"
 
 mode="${1:-apply}"
 vars="$(tfvars)"
+
+# Provider credentials kept in the encrypted secrets instead of the shell
+# environment (currently: the netcup token from `just netcup-login`).
+if [[ "$(provider)" == netcup && -z "${NETCUP_SCP_REFRESH_TOKEN:-}" ]]; then
+  require_secrets
+  NETCUP_SCP_REFRESH_TOKEN="$(sops decrypt --extract '["netcup"]["scp_refresh_token"]' "$SECRETS" 2> /dev/null)" \
+    || die "no netcup token: run 'just netcup-login' first"
+  export NETCUP_SCP_REFRESH_TOKEN
+fi
 info "Provider: $(provider), DNS: $(jq -r .dns <<< "$vars")"
 
 server="$(server_dir)"

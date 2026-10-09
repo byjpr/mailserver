@@ -82,6 +82,11 @@ misdirected message.
 
 ## 6. Secrets
 
+The accounts and machines around the server (provider, registrar, DNS,
+GitHub, your laptop with the age key) are outside what this configuration
+can protect; see [operator-security.md](operator-security.md).
+
+
 - Secrets are encrypted with [sops](https://github.com/getsops/sops) to two
   age keys: yours, and one derived from the server's SSH host key. The server
   decrypts them at boot into `/run/secrets` (tmpfs), readable only by the
