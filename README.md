@@ -168,6 +168,7 @@ when Terraform manages them.
   run `just install` again. There is no root password, so the provider's web
   console won't let you log in to the installed system.
 - **DMARC `p=reject` on your domains** means mail that claims to be from your
-  domain but didn't go through this server is rejected everywhere. If a domain
-  also sends from somewhere else (a newsletter tool, a billing system),
-  authorise that sender first or use `quarantine` until you have.
+  domain but didn't go through this server is rejected everywhere. Apps and
+  services that send as your domain need a send-only account here or must be
+  authorised, and inbound DMARC enforcement can reject posts from some
+  mailing lists. See [docs/deliverability.md](docs/deliverability.md).

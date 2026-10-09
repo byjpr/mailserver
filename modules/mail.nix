@@ -170,7 +170,7 @@ in
   services.rspamd.locals = {
     # Enforce the sender's published DMARC policy instead of only scoring it.
     # This is what stops spoofed mail claiming to be from paypal.com & co.
-    "dmarc.conf".text = ''
+    "dmarc.conf".text = lib.optionalString settings.dmarc.enforceInbound ''
       actions {
         reject = "reject";
         quarantine = "add header";
