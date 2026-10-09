@@ -126,6 +126,27 @@
     flake = "github:your-user/mailserver";
   };
 
+  # Encrypted off-site backups of all mailboxes with restic, to an
+  # S3-compatible bucket. Set the repository, then run `just backup-setup`
+  # (stores the bucket keys and a generated restic password in the secrets).
+  # See docs/backups.md.
+  backup = {
+    enable = false;
+    # e.g. "s3:https://s3.eu-central-003.backblazeb2.com/my-bucket/mail"
+    #      "s3:https://s3.gra.io.cloud.ovh.net/my-bucket/mail"
+    repository = "";
+    schedule = "daily";
+    keep = {
+      daily = 7;
+      weekly = 5;
+      monthly = 12;
+    };
+    # Set to true when the bucket has object lock / an append-only key, so
+    # that a compromised server cannot delete its own backups. The server
+    # then never prunes; run `just backup-prune` from your machine.
+    appendOnly = false;
+  };
+
   timeZone = "UTC";
 
   # Where the server runs. Each provider has a Terraform step in

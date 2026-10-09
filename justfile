@@ -17,6 +17,23 @@ add-domain domain selector="":
 passwd address *flags:
     scripts/passwd.sh {{address}} {{flags}}
 
+# Store the backup bucket credentials and generate the restic password
+backup-setup:
+    scripts/backup-setup.sh
+
+# Run a backup now
+backup-now:
+    just ssh systemctl start restic-backups-mail
+    just ssh restic-mail snapshots --latest 1
+
+# List backup snapshots
+backup-snapshots:
+    just ssh restic-mail snapshots
+
+# Delete old snapshots per settings.backup.keep, from this machine
+backup-prune:
+    scripts/backup-prune.sh
+
 # Store the password for the outbound relay (settings.relay)
 relay-password:
     scripts/relay-password.sh
