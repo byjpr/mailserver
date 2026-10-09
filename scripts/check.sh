@@ -40,6 +40,34 @@ else
   bad "SMTP STARTTLS on port 25 (your own ISP may block outbound port 25)"
 fi
 
+# Outbound SMTP, tested from the server itself: providers block port 25
+# (netcup's "Mail block" policy, UpCloud, OVH's anti-spam), and nothing else
+# would tell you until mail silently stops arriving.
+if [[ -f "$KNOWN_HOSTS" ]]; then
+  echo "Outbound SMTP (from the server)"
+  # shellcheck disable=SC2046
+  results="$(ssh $(ssh_opts) -o ConnectTimeout=10 "root@$name" '
+    for family in 4 6; do
+      if [ $family = 6 ] && [ -z "$(ip -6 route show default)" ]; then echo "6 none"; continue; fi
+      ip=$(getent ahostsv$family gmail-smtp-in.l.google.com | awk "NR==1{print \$1}")
+      if [ -z "$ip" ]; then echo "$family none"; continue; fi
+      banner=$(timeout 10 bash -c "exec 3<>/dev/tcp/$ip/25 && head -c 3 <&3" 2> /dev/null)
+      echo "$family ${banner:-fail} $ip"
+    done' 2> /dev/null || echo "ssh failed")"
+  while read -r family status target; do
+    case "$status" in
+      220) ok "port 25 open over IPv$family (Gmail answered from $target)" ;;
+      none) [[ "$family" == 6 ]] && ok "no IPv6 route to test (IPv4-only server)" || bad "cannot resolve Gmail's MX over IPv$family" ;;
+      failed) bad "could not ssh to $name to test outbound SMTP" ;;
+      *) if [[ "$(setting relay.enable)" == true ]]; then
+           ok "port 25 over IPv$family is blocked, but relay.enable is set"
+         else
+           bad "port 25 to $target (IPv$family) is BLOCKED: ask the provider to open it, or set relay.enable"
+         fi ;;
+    esac
+  done <<< "${results/ssh failed/0 failed}"
+fi
+
 for domain in $(setting domains | jq -r '.[]'); do
   echo "Domain $domain"
   [[ "$(q MX "$domain")" == "10 $name." ]] && ok "MX -> $name" || bad "MX: '$(q MX "$domain")'"
