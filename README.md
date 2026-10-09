@@ -75,8 +75,10 @@ git add -A && git commit -m "Install mail server"
 just check
 ```
 
-Then send a test mail to [mail-tester.com](https://www.mail-tester.com) and
-run [internet.nl](https://internet.nl/test-mail/) against your domain.
+Then go through [docs/first-install.md](docs/first-install.md): test mail
+in both directions, [mail-tester.com](https://www.mail-tester.com) and
+[internet.nl](https://internet.nl/test-mail/). `just status` gives a quick
+overview of the server at any time.
 
 **Back up your age key** (`~/.config/sops/age/keys.txt`, or
 `~/Library/Application Support/sops/age/keys.txt` on macOS). Without it you
