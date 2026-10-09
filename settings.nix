@@ -114,6 +114,11 @@
     burst = 50;
   };
 
+  # Quota for every mailbox that doesn't set its own `quota`. Without one, a
+  # mail flood or loop into a single mailbox can fill the server's disk and
+  # stop mail for everybody. null = unlimited (not recommended).
+  defaultQuota = "5G";
+
   # Messages larger than this are rejected (bytes). 25 MiB.
   messageSizeLimit = 26214400;
 

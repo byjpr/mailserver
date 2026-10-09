@@ -111,6 +111,9 @@ in
     # Don't leak the sender's client hostname in Message-IDs.
     rewriteMessageId = true;
 
+    # Per-mailbox limit unless the account sets its own `quota`.
+    quota.defaults.perUser = settings.defaultQuota;
+
     # ClamAV needs well over 1 GB of RAM; Rspamd still rejects known-bad
     # attachments and phishing via its own checks.
     virusScanning = false;
@@ -157,6 +160,10 @@ in
 
     # Record the TLS version and cipher in Received headers.
     smtpd_tls_received_header = true;
+
+    # Stop accepting mail (temporary 452, so senders retry) while less than
+    # this much disk is free, instead of filling the disk completely.
+    queue_minfree = 4 * settings.messageSizeLimit;
   };
 
   services.postfix.mapFiles."local_sender_domains" = pkgs.writeText "local_sender_domains" (
@@ -191,6 +198,11 @@ in
       }
     '';
   };
+
+  warnings = lib.optional (settings.defaultQuota == null) ''
+    settings.nix: defaultQuota is null, so mailboxes without their own quota
+    can grow until the disk is full, which stops mail for every user.
+  '';
 
   # --- Sanity checks ----------------------------------------------------------
   assertions =
