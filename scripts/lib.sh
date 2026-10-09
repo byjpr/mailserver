@@ -54,9 +54,55 @@ server_dir() {
   echo "$ROOT/infra/servers/$(provider)"
 }
 
+# Terraform state is committed to git, encrypted with OpenTofu's state
+# encryption. The passphrase lives in secrets/secrets.yaml, so anyone who can
+# decrypt the secrets can work on the infrastructure from any machine.
+use_state_encryption() {
+  [[ -z "${TF_ENCRYPTION:-}" ]] || return 0
+  require_secrets
+  local passphrase
+  if ! passphrase="$(sops decrypt --extract '["terraform"]["state_passphrase"]' "$SECRETS" 2> /dev/null)"; then
+    info "Creating the Terraform state passphrase in secrets/secrets.yaml"
+    passphrase="$(openssl rand -base64 33)"
+    sops_set '["terraform"]["state_passphrase"]' "$passphrase"
+  fi
+  TF_ENCRYPTION="$(cat <<TFENC
+key_provider "pbkdf2" "main" {
+  passphrase = "$passphrase"
+}
+method "aes_gcm" "main" {
+  keys = key_provider.pbkdf2.main
+}
+state {
+  method   = method.aes_gcm.main
+  enforced = true
+}
+plan {
+  method   = method.aes_gcm.main
+  enforced = true
+}
+TFENC
+)"
+  export TF_ENCRYPTION
+}
+
 # tofu in the selected provider's server step.
 tofu_server() {
+  use_state_encryption
   tofu -chdir="$(server_dir)" "$@"
+}
+
+# Refuse to touch infrastructure when the server was installed (known_hosts
+# exists) but the Terraform state for it is missing: applying would create a
+# second, empty server and point DNS at it.
+require_server_state() {
+  [[ -f "$KNOWN_HOSTS" ]] || return 0
+  if [[ -z "$(tofu_server state list 2> /dev/null)" ]]; then
+    die "known_hosts says a server is installed, but $(server_dir)/terraform.tfstate has no
+resources. Applying now would create a second server and move DNS to it.
+Restore the state from git (git log -- '$(server_dir)/terraform.tfstate'),
+or import the existing server, before running this again."
+  fi
 }
 
 ssh_opts() {

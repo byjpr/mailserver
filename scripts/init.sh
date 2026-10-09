@@ -55,7 +55,8 @@ sops encrypt --input-type binary --output-type binary \
   --filename-override secrets/ssh_host_ed25519_key.enc \
   "$tmp/ssh_host_ed25519_key" > "$HOST_KEY_ENC"
 
-printf 'mailboxes: {}\ndkim: {}\n' > "$tmp/secrets.yaml"
+printf 'mailboxes: {}\ndkim: {}\nterraform:\n  state_passphrase: "%s"\n' \
+  "$(openssl rand -base64 33)" > "$tmp/secrets.yaml"
 sops encrypt --filename-override secrets/secrets.yaml "$tmp/secrets.yaml" > "$SECRETS"
 
 for domain in $(setting domains | jq -r '.[]'); do

@@ -13,9 +13,11 @@ mode="${1:-apply}"
 vars="$(tfvars)"
 info "Provider: $(provider), DNS: $(jq -r .dns <<< "$vars")"
 
+use_state_encryption
 server="$(server_dir)"
 jq '{mail: .}' <<< "$vars" > "$server/settings.auto.tfvars.json"
 tofu -chdir="$server" init -input=false > /dev/null
+require_server_state
 
 if [[ "$mode" == plan ]]; then
   tofu -chdir="$server" plan
@@ -57,6 +59,11 @@ if jq -e .providerInfo.reverseDnsNeedsForwardDns <<< "$vars" > /dev/null; then
 else
   info "3/3 Reverse DNS was handled in step 1"
 fi
+
+# The (encrypted) state belongs in git: without it, the next apply from
+# another machine would create a second server.
+git add infra/servers/*/terraform.tfstate infra/dns/*/terraform.tfstate 2> /dev/null || true
+info "Terraform state staged in git (encrypted); commit it."
 
 note="$(jq -r .providerInfo.afterApply <<< "$vars")"
 if [[ -n "$note" ]]; then

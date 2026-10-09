@@ -7,6 +7,7 @@ OVH_* credentials from the environment as the Terraform provider, plus:
   VPS_SSH_KEY       the public key to install
 """
 
+import datetime
 import os
 import sys
 import time
@@ -30,6 +31,17 @@ def wait_for(predicate, what, timeout=1800):
 
 # A new VPS is delivered asynchronously after the order.
 wait_for(lambda: client.get(f"/vps/{service}")["state"] == "running", "VPS delivery")
+
+# This reinstall wipes the disk. It must only ever run right after the order;
+# if Terraform recreates this step later (tofu apply -replace, state
+# surgery), refuse instead of destroying the mail server.
+created = datetime.date.fromisoformat(client.get(f"/vps/{service}/serviceInfos")["creation"])
+age_days = (datetime.date.today() - created).days
+if age_days > 1 and os.environ.get("OVH_FORCE_REBUILD") != "1":
+    sys.exit(
+        f"{service} was ordered {age_days} days ago; refusing to reinstall it (that would wipe "
+        "the installed mail server). If you really mean to, rerun with OVH_FORCE_REBUILD=1."
+    )
 
 images = [client.get(f"/vps/{service}/images/available/{i}")
           for i in client.get(f"/vps/{service}/images/available")]
