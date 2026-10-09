@@ -22,3 +22,12 @@ jobs:
         with:
           pr-title: "Update flake inputs"
           pr-labels: dependencies
+
+  # Fails (and GitHub mails the repository owner) from 30 days before the
+  # NixOS release in lib/release.nix stops receiving security updates.
+  release-support:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+      - run: nix develop -c scripts/check-release.sh

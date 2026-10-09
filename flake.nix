@@ -67,6 +67,7 @@
               ./modules/mail.nix
               ./modules/relay.nix
               ./modules/web.nix
+              ./modules/release.nix
               {
                 networking.hostName = settings.hostname;
                 networking.domain = settings.primaryDomain;
