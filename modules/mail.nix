@@ -193,6 +193,24 @@ in
       }
     '';
 
+    # Mail to forwarded addresses leaves again from our IP. Spam that would
+    # normally only be marked ("add header") is rejected instead, so we never
+    # pass it on to Gmail & co. under our own reputation. Rejecting during
+    # SMTP leaves the bounce to the sending server: no backscatter.
+    "settings.conf".text = lib.optionalString (settings.forwards != { }) ''
+      forwarded_recipients {
+        priority = high;
+        rcpt = ${builtins.toJSON (lib.attrNames settings.forwards)};
+        apply {
+          actions {
+            reject = ${toString settings.forwardRejectScore};
+            "add header" = null;
+            "rewrite subject" = null;
+          }
+        }
+      }
+    '';
+
     # Cap how much mail one authenticated account can send, so a leaked
     # password can't turn the server into a spam cannon (and get its IP
     # blocklisted).
