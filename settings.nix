@@ -70,6 +70,11 @@
     # "ssh-ed25519 AAAA... you@laptop"
   ];
 
+  # Networks fail2ban never bans, e.g. your office or home IP ranges, so a
+  # misconfigured phone there can't lock everyone out of IMAP/SMTP.
+  # Unban an address manually with `just unban <ip>`.
+  fail2banIgnoreIP = [ ];
+
   # Only accept SSH from these networks (enforced by the host firewall).
   # Mail ports are always open to the world. Narrow this if you have a
   # static IP or a VPN.

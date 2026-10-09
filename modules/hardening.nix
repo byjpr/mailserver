@@ -64,11 +64,16 @@
     enable = true;
     maxretry = 5;
     bantime = "1h";
+    # Repeat offenders are banned longer, up to a day. Counted per jail, so a
+    # phone retrying an old IMAP password doesn't also escalate SSH bans.
+    # A shared NAT (office, mobile carrier) means a ban can hit every user
+    # behind it; list your own networks in settings.fail2banIgnoreIP.
     bantime-increment = {
       enable = true;
-      maxtime = "1w";
-      overalljails = true;
+      maxtime = "1d";
+      overalljails = false;
     };
+    ignoreIP = settings.fail2banIgnoreIP;
     # Only authentication failures are banned. Port 25 protocol errors are
     # deliberately not: that would eventually ban the outbound IPs of large
     # providers (Gmail, Outlook) and delay legitimate mail. Rspamd handles
