@@ -58,6 +58,9 @@
   # Forwarding breaks SPF; Sender Rewriting Scheme (SRS) is turned on
   # automatically when forwards exist, so forwarded mail still passes.
   forwards = { };
+  # Spam score at which mail to a forwarded address is rejected rather than
+  # passed on (Rspamd's normal "add header" threshold is 6).
+  forwardRejectScore = 6;
 
   # Contact address published in DMARC/TLS-RPT reports and used for the
   # Let's Encrypt account.
