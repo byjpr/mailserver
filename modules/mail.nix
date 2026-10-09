@@ -167,6 +167,22 @@ in
   );
 
   # --- Rspamd -----------------------------------------------------------------
+  # Authenticated users may only use their own addresses in the From: header
+  # (Postfix only enforces this for the envelope sender).
+  services.rspamd.localLuaRules =
+    let
+      allowed = builtins.toJSON (
+        lib.mapAttrs (address: acct: {
+          addresses = [ address ] ++ (acct.aliases or [ ]);
+          regexes = acct.aliasesRegexp or [ ];
+        }) settings.accounts
+      );
+    in
+    assert lib.assertMsg (!lib.hasInfix "]==]" allowed) "account addresses may not contain ]==]";
+    pkgs.writeText "rspamd.local.lua" (
+      builtins.replaceStrings [ "@ALLOWED@" ] [ allowed ] (builtins.readFile ./rspamd/from-owner.lua)
+    );
+
   services.rspamd.locals = {
     # Enforce the sender's published DMARC policy instead of only scoring it.
     # This is what stops spoofed mail claiming to be from paypal.com & co.
