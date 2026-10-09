@@ -5,23 +5,21 @@
 #   - the MAC address, addresses and gateways of the public interface, for
 #     providers that don't hand them out via DHCP/router advertisements
 #
-#   detect-machine.sh <user@ip> [terraform-network.json]
+#   detect-machine.sh <user@ip> <known_hosts> [terraform-network.json]
 #
+# <known_hosts> pins the stock image's (verified) host key; see install.sh.
 # If the provider's Terraform step knows the network configuration (netcup),
-# pass it as the second argument; its addresses take precedence.
+# pass it as the third argument; its addresses take precedence.
 source "$(dirname "$0")/lib.sh"
 cd "$ROOT"
 
-target="${1:?usage: detect-machine.sh <user@ip> [network.json]}"
-tf_network="${2:-}"
+target="${1:?usage: detect-machine.sh <user@ip> <known_hosts> [network.json]}"
+known="${2:?usage: detect-machine.sh <user@ip> <known_hosts> [network.json]}"
+tf_network="${3:-}"
 out="$ROOT/machine.json"
 
 info "Reading disk and network configuration of $target"
-# The stock image's host key is unknown and is thrown away with the image, so
-# it is accepted once into a throw-away known_hosts file.
-tmp_known="$(mktemp)"
-trap 'rm -f "$tmp_known"' EXIT
-raw="$(ssh -o UserKnownHostsFile="$tmp_known" -o StrictHostKeyChecking=accept-new "$target" '
+raw="$(ssh -o UserKnownHostsFile="$known" -o StrictHostKeyChecking=yes "$target" '
   root_dev="$(findmnt -no SOURCE /)"
   disk="/dev/$(lsblk -no PKNAME "$root_dev" | head -n1)"
   printf "{\"disk\":\"%s\",\"links\":%s,\"a4\":%s,\"r4\":%s,\"a6\":%s,\"r6\":%s}" "$disk" \

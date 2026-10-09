@@ -68,6 +68,8 @@ git add -A && git commit -m "Configure mail server"
 just apply
 
 # 6. Install NixOS on the server (wipes it), then commit what it recorded.
+#    It asks you to confirm the server's SSH host key fingerprint against
+#    the provider's web console first.
 just install
 git add -A && git commit -m "Install mail server"
 
